@@ -15,8 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+    - uses: actions/checkout@v3
     
     - name: Set up Node.js
       uses: actions/setup-node@v3
@@ -27,15 +26,14 @@ jobs:
       run: npm install
     
     - name: Run tests
-      run: npm test  # Ensure tests are defined in package.json
+      run: npm test  # Add tests to your package.json if needed
     
   deploy:
     needs: build-and-test
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+    - uses: actions/checkout@v3
     
     - name: Set up Node.js
       uses: actions/setup-node@v3
@@ -46,31 +44,22 @@ jobs:
       run: npm install
     
     - name: Build application
-      run: npm run build  # Ensure package.json has a "build" script
+      run: npm run build  # Add build script to your package.json
     
-    - name: Install AWS CLI
-      run: |
-        sudo apt update && sudo apt install -y awscli
-        aws --version  # Verify AWS CLI installation
-
-    - name: Verify AWS Credentials
-      run: aws sts get-caller-identity  # Ensure AWS authentication works
-
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v2
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION }}
-
+    
     - name: Deploy to S3
       run: |
-        if [ -d "./build" ]; then
-          aws s3 sync ./build s3://${{ secrets.S3_BUCKET_NAME }} --delete
-        else
-          echo "Error: Build directory does not exist!" && exit 100
-        fi
-
-    - name: Invalidate CloudFront Cache (Optional)
-      if: ${{ secrets.CF_DISTRIBUTION_ID != '' }}
-      run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CF_DISTRIBUTION_ID }} --paths "/*"
+        # Install AWS CLI (if not using a predefined GitHub action that includes it)
+        sudo apt-get install -y awscli
+        
+        # Sync build directory to S3 bucket
+        aws s3 sync ./build s3://${{ secrets.S3_BUCKET_NAME }} --delete
+        
+        # Optional: Invalidate CloudFront cache if using CloudFront
+        # aws cloudfront create-invalidation --distribution-id ${{ secrets.CF_DISTRIBUTION_ID }} --paths "/*"
