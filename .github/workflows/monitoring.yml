@@ -1,0 +1,41 @@
+name: CI/CD Pipeline with Logging
+
+on: [push]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Log Start of Build
+        run: echo "::notice::Build started for commit ${{ github.sha }}"
+
+      - name: Install Dependencies
+        run: |
+          echo "::group::Installing Dependencies"
+          npm install
+          echo "::notice::Dependency installation completed"
+          echo "::endgroup::"
+        if: success()
+
+      - name: Run Tests
+        run: |
+          echo "::group::Running Tests"
+          npm test
+          TEST_EXIT_CODE=$?
+          echo "::notice::Tests completed with exit code $TEST_EXIT_CODE"
+          if [ $TEST_EXIT_CODE -ne 0 ]; then echo "::error::Test failures detected!"; exit 1; fi
+          echo "::endgroup::"
+        if: success()
+
+      - name: Log Test Results
+        run: |
+          echo "::group::Test Results"
+          echo "Tests completed successfully!"
+          echo "::endgroup::"
+        if: success()
+
+      - name: Log Completion
+        run: echo "::notice::Workflow execution completed successfully"
